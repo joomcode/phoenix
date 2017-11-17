@@ -130,6 +130,8 @@ import org.apache.phoenix.expression.function.WeekFunction;
 import org.apache.phoenix.expression.function.YearFunction;
 import org.apache.phoenix.expression.function.DayOfWeekFunction;
 import org.apache.phoenix.expression.function.DayOfYearFunction;
+import org.apache.phoenix.expression.function.HllMergeAggregateFunction;
+import org.apache.phoenix.expression.function.HllCardinalityFunction;
 
 import com.google.common.collect.Maps;
 
@@ -292,7 +294,9 @@ public enum ExpressionType {
     DefaultValueExpression(DefaultValueExpression.class),
     ArrayColumnExpression(SingleCellColumnExpression.class),
     FirstValuesFunction(FirstValuesFunction.class),
-    LastValuesFunction(LastValuesFunction.class);
+    LastValuesFunction(LastValuesFunction.class),
+    HllMergeAggregateFunction(HllMergeAggregateFunction.class),
+    HllCardinalityFUnction(HllCardinalityFunction.class);
 
     ExpressionType(Class<? extends Expression> clazz) {
         this.clazz = clazz;
