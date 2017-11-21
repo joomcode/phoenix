@@ -134,6 +134,7 @@
                   <include>io.dropwizard.metrics:metrics-core</include>
                   <include>org.apache.thrift:libthrift</include>
                   <include>com.clearspring.analytics:stream</include>
+                  <include>net.openhft:zero-allocation-hashing</include>
                 </includes>
                   <excludes>
                     <exclude>org.apache.phoenix:phoenix-server</exclude>

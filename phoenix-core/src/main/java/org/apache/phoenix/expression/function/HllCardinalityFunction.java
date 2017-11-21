@@ -1,6 +1,5 @@
 package org.apache.phoenix.expression.function;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.phoenix.expression.Expression;
 import org.apache.phoenix.parse.FunctionParseNode;
@@ -9,10 +8,6 @@ import org.apache.phoenix.schema.types.PDataType;
 import org.apache.phoenix.schema.types.PLong;
 import org.apache.phoenix.schema.types.PVarbinary;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -39,19 +34,9 @@ public class HllCardinalityFunction extends ScalarFunction {
             return true;
         }
 
-        // get HLL from argument and calculate cardinality
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(ptr.get(), ptr.getOffset(), ptr.getLength());
-             DataInputStream di = new DataInputStream(bais)) {
-            HyperLogLogPlus arg = HyperLogLogPlus.Builder.build(di);
-            long cardinality = arg.cardinality();
-
-            ptr.set(new byte[getDataType().getByteSize()]);
-            getDataType().getCodec().encodeLong(cardinality, ptr);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        long cardinality = HyperLogLog.query(ptr.get(), ptr.getOffset());
+        ptr.set(new byte[getDataType().getByteSize()]);
+        getDataType().getCodec().encodeLong(cardinality, ptr);
 
         return true;
     }
