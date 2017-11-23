@@ -7,6 +7,7 @@ import org.apache.phoenix.schema.tuple.Tuple;
 import org.apache.phoenix.schema.types.PDataType;
 import org.apache.phoenix.schema.types.PLong;
 import org.apache.phoenix.schema.types.PVarbinary;
+import org.apache.phoenix.util.ByteUtil;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -34,7 +35,9 @@ public class HllCardinalityFunction extends ScalarFunction {
             return true;
         }
 
-        long cardinality = HyperLogLog.cardinality(ptr.get(), ptr.getOffset());
+        //TODO additional copy may be avoided by passing length to cardinality
+        byte[] data = ByteUtil.copyKeyBytesIfNecessary(ptr);
+        long cardinality = HyperLogLog.cardinality(data, 0);
         ptr.set(new byte[getDataType().getByteSize()]);
         getDataType().getCodec().encodeLong(cardinality, ptr);
 

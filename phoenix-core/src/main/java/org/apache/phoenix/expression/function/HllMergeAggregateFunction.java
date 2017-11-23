@@ -67,10 +67,12 @@ class MergeHllAggregator extends BaseAggregator {
 
     @Override
     public void aggregate(Tuple tuple, ImmutableBytesWritable ptr) {
+        //TODO additional copy may be avoided by passing length to merge
+        byte[] data = ByteUtil.copyKeyBytesIfNecessary(ptr);
         HyperLogLog.merge(valueByteArray.get(),
                 valueByteArray.getOffset(),
-                ptr.get(),
-                ptr.getOffset());
+                data,
+                0);
     }
 
     @Override
@@ -149,7 +151,9 @@ final class HyperLogLog {
     }
 
     public static byte[] allocate() {
-        return new byte[m + 1];
+        byte[] buffer = new byte[m + 1];
+        buffer[0] = UNCOMPRESSED_MARK;
+        return buffer;
     }
 
     public static void update(byte[] buffer, int offset, String o) {
@@ -168,7 +172,7 @@ final class HyperLogLog {
     }
 
     private static void updateByHash(byte[] buffer, int offset, long hash) {
-        if (buffer[offset] == COMPRESSED_MARK){
+        if (buffer[offset] == COMPRESSED_MARK) {
             throw new IllegalArgumentException("Cannot update compressed buffer");
         }
 
@@ -188,11 +192,11 @@ final class HyperLogLog {
     }
 
     public static void merge(byte[] buffer1, int offset1, byte[] buffer2, int offset2) {
-        if (buffer1[offset1] == COMPRESSED_MARK){
+        if (buffer1[offset1] == COMPRESSED_MARK) {
             throw new IllegalArgumentException("Cannot merge with compressed buffer");
         }
 
-        if (buffer2[offset2] == COMPRESSED_MARK){
+        if (buffer2[offset2] == COMPRESSED_MARK) {
             buffer2 = decompress(buffer2, offset2);
             offset2 = 0;
         }
@@ -208,7 +212,7 @@ final class HyperLogLog {
     }
 
     public static long cardinality(byte[] buffer, int offset) {
-        if (buffer[offset] == COMPRESSED_MARK){
+        if (buffer[offset] == COMPRESSED_MARK) {
             buffer = decompress(buffer, offset);
             offset = 0;
         }
