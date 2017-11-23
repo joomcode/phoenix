@@ -135,6 +135,7 @@
                   <include>org.apache.thrift:libthrift</include>
                   <include>com.clearspring.analytics:stream</include>
                   <include>net.openhft:zero-allocation-hashing</include>
+                  <include>com.github.luben:zstd-jni</include>
                 </includes>
                   <excludes>
                     <exclude>org.apache.phoenix:phoenix-server</exclude>

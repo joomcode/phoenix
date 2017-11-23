@@ -34,7 +34,7 @@ public class HllCardinalityFunction extends ScalarFunction {
             return true;
         }
 
-        long cardinality = HyperLogLog.query(ptr.get(), ptr.getOffset());
+        long cardinality = HyperLogLog.cardinality(ptr.get(), ptr.getOffset());
         ptr.set(new byte[getDataType().getByteSize()]);
         getDataType().getCodec().encodeLong(cardinality, ptr);
 
