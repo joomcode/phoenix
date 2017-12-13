@@ -23,17 +23,17 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 @FunctionParseNode.BuiltInFunction(
-        name = HllMergeAggregateFunction.NAME,
+        name = HllUnionAggregateFunction.NAME,
         args = {@FunctionParseNode.Argument(allowedTypes = {PVarbinary.class})}
 )
-public class HllMergeAggregateFunction extends SingleAggregateFunction {
-    public static final String NAME = "HLL_MERGE";
+public class HllUnionAggregateFunction extends SingleAggregateFunction {
+    public static final String NAME = "HLL_UNION_AGG";
 
 
-    public HllMergeAggregateFunction() {
+    public HllUnionAggregateFunction() {
     }
 
-    public HllMergeAggregateFunction(List<Expression> childExpressions) {
+    public HllUnionAggregateFunction(List<Expression> childExpressions) {
         super(childExpressions);
     }
 
@@ -59,7 +59,7 @@ public class HllMergeAggregateFunction extends SingleAggregateFunction {
 }
 
 class MergeHllAggregator extends BaseAggregator {
-    private final ImmutableBytesWritable valueByteArray = new ImmutableBytesWritable(HyperLogLog.allocate());
+    private byte[] buffer = HyperLogLog.allocate();
 
     MergeHllAggregator() {
         super(SortOrder.getDefault());
@@ -69,15 +69,15 @@ class MergeHllAggregator extends BaseAggregator {
     public void aggregate(Tuple tuple, ImmutableBytesWritable ptr) {
         //TODO additional copy may be avoided by passing length to merge
         byte[] data = ByteUtil.copyKeyBytesIfNecessary(ptr);
-        HyperLogLog.merge(valueByteArray.get(),
-                valueByteArray.getOffset(),
+        HyperLogLog.merge(buffer,
+                0,
                 data,
                 0);
     }
 
     @Override
     public boolean evaluate(Tuple tuple, ImmutableBytesWritable ptr) {
-        ptr.set(ByteUtil.copyKeyBytesIfNecessary(valueByteArray));
+        ptr.set(HyperLogLog.compress(buffer, 0));
         return true;
     }
 
@@ -88,12 +88,12 @@ class MergeHllAggregator extends BaseAggregator {
 
     @Override
     public void reset() {
-        valueByteArray.set(HyperLogLog.allocate());
+        buffer = HyperLogLog.allocate();
     }
 
     @Override
     public int getSize() {
-        return valueByteArray.getLength();
+        return HyperLogLog.compress(buffer, 0).length;
     }
 
     @Override
@@ -103,7 +103,7 @@ class MergeHllAggregator extends BaseAggregator {
 
     @Override
     public String toString() {
-        return "HLL_MERGE [hll=" + HyperLogLog.cardinality(valueByteArray.get(), valueByteArray.getOffset()) + "]";
+        return "HLL_MERGE [hll=" + HyperLogLog.cardinality(buffer, 0) + "]";
     }
 }
 
@@ -248,7 +248,7 @@ final class HyperLogLog {
         }
     }
 
-    private static byte[] decompress(byte[] buffer, int offset) {
+    public static byte[] decompress(byte[] buffer, int offset) {
         if (buffer[0] == COMPRESSED_MARK) {
             byte[] dst = new byte[m + 1];
             dst[0] = UNCOMPRESSED_MARK;
